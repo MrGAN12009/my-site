@@ -86,6 +86,47 @@
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     
     {% block extra_js %}{% endblock %}
+
+    <!-- Виджет чат-бота -->
+    <button id="chat-launcher" class="chat-launcher" aria-label="Открыть чат">
+        <i class="bi bi-chat-dots-fill"></i>
+    </button>
+
+    <div id="chat-widget" class="chat-widget closed" aria-hidden="true">
+        <div class="chat-header">
+            <div>
+                <div class="chat-title">AI-ассистент</div>
+                <div class="chat-subtitle">Задайте вопрос по сайту или услугам</div>
+            </div>
+            <button type="button" class="chat-close-btn" aria-label="Закрыть чат">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="chat-body">
+            <div class="chat-messages" id="chat-messages">
+                <div class="chat-message bot">
+                    <div class="chat-bubble">
+                        Привет! Я AI-ассистент. Могу ответить на вопросы про услуги, кейсы и работу с проектами.
+                    </div>
+                </div>
+            </div>
+            <div class="chat-typing-indicator d-none" id="chat-typing">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <form id="chat-form" class="chat-footer">
+            <input
+                type="text"
+                id="chat-input"
+                class="chat-input"
+                placeholder="Напишите ваш вопрос..."
+                autocomplete="off"
+            />
+            <button type="submit" class="chat-send-btn" aria-label="Отправить">
+                <i class="bi bi-send-fill"></i>
+            </button>
+        </form>
+    </div>
 </body>
 </html>
 

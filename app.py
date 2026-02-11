@@ -11,8 +11,8 @@ from flask_sqlalchemy import SQLAlchemy
 from wtforms import StringField, TextAreaField, EmailField, TelField, SelectField, SubmitField
 from wtforms.validators import DataRequired, Email, Length
 from flask_wtf import FlaskForm, CSRFProtect
-from flask_wtf.csrf import generate_csrf
 from config import Config
+from backend.rag_index import generate_answer as rag_generate_answer
 
 # Настройка логирования
 logging.basicConfig(
@@ -363,6 +363,31 @@ def delete_contact(contact_id):
     logger.info(f'Заявка {contact_id} удалена')
     flash('Заявка успешно удалена', 'success')
     return redirect(url_for('admin_dashboard'))
+
+
+@app.route('/chat', methods=['POST'])
+@csrf.exempt
+def chat():
+    """API-эндпоинт для RAG-чатбота на главной странице."""
+    data = request.get_json(silent=True) or {}
+    message = (data.get('message') or '').strip()
+    top_k = data.get('top_k') or 3
+
+    try:
+        top_k = int(top_k)
+    except (TypeError, ValueError):
+        top_k = 3
+
+    if not message:
+        return jsonify({'error': 'Пустое сообщение'}), 400
+
+    try:
+        result = rag_generate_answer(message, top_k=top_k)
+        logger.info('Чат-бот обработал сообщение пользователя')
+        return jsonify(result)
+    except Exception as e:
+        logger.exception(f'Ошибка RAG-чатбота: {e}')
+        return jsonify({'error': 'Ошибка при обработке запроса чат-бота'}), 500
 
 # Инициализация базы данных
 def init_db():

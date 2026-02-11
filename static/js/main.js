@@ -13,6 +13,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Инициализация tooltips Bootstrap
     initTooltips();
+
+    // Инициализация виджета чат-бота
+    initChatWidget();
 });
 
 /**
@@ -181,4 +184,119 @@ window.siteUtils = {
     showNotification,
     handleAjaxError
 };
+
+/**
+ * Инициализация виджета чат-бота
+ */
+function initChatWidget() {
+    const launcher = document.getElementById('chat-launcher');
+    const widget = document.getElementById('chat-widget');
+    const closeBtn = widget ? widget.querySelector('.chat-close-btn') : null;
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('chat-input');
+    const messagesContainer = document.getElementById('chat-messages');
+    const typingIndicator = document.getElementById('chat-typing');
+
+    if (!launcher || !widget || !form || !input || !messagesContainer) {
+        return;
+    }
+
+    function openWidget() {
+        widget.classList.remove('closed');
+        widget.classList.add('open');
+        widget.setAttribute('aria-hidden', 'false');
+        input.focus();
+    }
+
+    function closeWidget() {
+        widget.classList.remove('open');
+        widget.classList.add('closed');
+        widget.setAttribute('aria-hidden', 'true');
+    }
+
+    launcher.addEventListener('click', function() {
+        if (widget.classList.contains('open')) {
+            closeWidget();
+        } else {
+            openWidget();
+        }
+    });
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeWidget);
+    }
+
+    function appendMessage(text, from = 'bot') {
+        const msg = document.createElement('div');
+        msg.className = 'chat-message ' + (from === 'user' ? 'user' : 'bot');
+
+        const bubble = document.createElement('div');
+        bubble.className = 'chat-bubble';
+        bubble.textContent = text;
+
+        msg.appendChild(bubble);
+        messagesContainer.appendChild(msg);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    async function sendMessage(message) {
+        if (!message) return;
+
+        appendMessage(message, 'user');
+        input.value = '';
+
+        if (typingIndicator) {
+            typingIndicator.classList.remove('d-none');
+        }
+
+        try {
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: message,
+                    top_k: 3
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Network error');
+            }
+
+            const data = await response.json();
+            if (data.error) {
+                appendMessage(data.error, 'bot');
+            } else if (data.answer) {
+                appendMessage(data.answer, 'bot');
+            } else {
+                appendMessage('Не удалось получить ответ от ассистента.', 'bot');
+            }
+        } catch (err) {
+            console.error(err);
+            appendMessage('Произошла ошибка при обращении к чат-боту.', 'bot');
+        } finally {
+            if (typingIndicator) {
+                typingIndicator.classList.add('d-none');
+            }
+        }
+    }
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const message = input.value.trim();
+        if (!message) return;
+        sendMessage(message);
+    });
+
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            const message = input.value.trim();
+            if (!message) return;
+            sendMessage(message);
+        }
+    });
+}
 
